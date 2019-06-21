@@ -1,3 +1,4 @@
+
 var SCREEN_WIDTH = window.innerWidth;
 var SCREEN_HEIGHT = window.innerHeight;
 
@@ -19,6 +20,7 @@ var clock = new THREE.Clock();
 var gui, skinConfig, morphConfig;
 
 document.addEventListener('mousemove', onDocumentMouseMove, false);
+document.addEventListener('mousedown', onDocumentMouseDown, false);
 
 init();
 animate();
@@ -30,7 +32,7 @@ function init() {
     70,
     window.innerWidth / window.innerHeight,
     1,
-    100000
+    10000
   );
   camera.position.set(5000, 5000, 5000);
 
@@ -52,20 +54,12 @@ function init() {
   // CHARACTER
 
   character = new THREE.UCSCharacter();
-  character.onLoadComplete = function() {
-    console.log('Load Complete');
-    console.log(
-      character.numSkins +
-        ' skins and ' +
-        character.numMorphs +
-        ' morphtargets loaded.'
-    );
-    // gui = new dat.GUI();
-    //setupSkinsGUI();
-    //setupMorphsGUI();
-    // gui.width = 300;
-    //gui.open();
-  };
+
+
+  gui = new dat.GUI();
+  gui.width = 300;
+  gui.open();
+  //};
 
   var loader = new THREE.XHRLoader();
 
@@ -74,6 +68,7 @@ function init() {
     function(text) {
       var config = JSON.parse(text);
       character.loadParts(config);
+
       scene.add(character.root);
     }
   );
@@ -111,28 +106,13 @@ function init() {
 //     skinGui.open();
 //   }
 
-function setupMorphsGUI() {
-  var morphGui = gui.addFolder('Morphs');
+function setupGUI(intersectedObj) {
+  var morphGui = gui.addFolder(intersectedObj.name + ' Exercises');
 
-  morphConfig = {};
-
-  var morphCallback = function(index) {
-    return function() {
-      character.updateMorphs(morphConfig);
-    };
-  };
-
-  for (var i = 0; i < character.numMorphs; i++) {
-    var morphName = character.morphs[i];
-    morphConfig[morphName] = 0;
-  }
 
   for (var i = 0; i < character.numMorphs; i++) {
     morphGui
-      .add(morphConfig, character.morphs[i])
-      .min(0)
-      .max(100)
-      .onChange(morphCallback(i));
+      .add(null, 'Crunches');
   }
 
   morphGui.open();
@@ -153,6 +133,43 @@ function onDocumentMouseMove(event) {
   mouseY = (event.clientY - windowHalfY) * 10;
 }
 
+var raycaster = new THREE.Raycaster();
+
+function onDocumentMouseDown(e) {
+  e.preventDefault();
+
+  var mouseVector = new THREE.Vector3(
+    (e.clientX / window.innerWidth) * 2 - 1,
+    -(e.clientY / window.innerHeight) * 2 + 1
+  );
+
+
+  raycaster.setFromCamera(mouseVector.clone(),camera)
+
+  // create an array containing all objects in the scene with which the ray intersects
+  var intersects = raycaster.intersectObjects( scene.children );
+    console.log('intersects', intersects)
+  if (intersects.length>0){
+    console.log("Intersected object:", intersects.length);
+    console.log(gui)
+    if(!gui.__folders['Abs Exercises']) setupGUI(intersects[0].object)
+    else console.log('this already exists')
+}
+}
+
+//circle
+var geometry = new THREE.CircleGeometry(100, 32);
+var material = new THREE.MeshBasicMaterial({
+  color: 0x000000,
+  opacity: 0.5,
+  transparent: true
+});
+var circle = new THREE.Mesh(geometry, material);
+circle.position.set(0, 3500, 70);
+circle.rotation.x -= 0.22;
+circle.name = 'Abs'
+scene.add(circle);
+
 function animate() {
   requestAnimationFrame(animate);
 
@@ -170,3 +187,18 @@ function render() {
 
   renderer.render(scene, camera);
 }
+
+/*//turqoise cube
+//initialize cube
+var boxxy = new THREE.BoxGeometry(100, 100, 100);
+//initialize mesh
+var material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+//put them together
+var cube = new THREE.Mesh(boxxy, material);
+
+//set position
+cube.position.set(0, 4000, 250);
+
+//add to scene
+scene.add(cube); */
